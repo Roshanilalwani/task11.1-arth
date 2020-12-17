@@ -1,0 +1,52 @@
+- hosts: 192.168.43.197
+  vars_prompt:
+  - name: namenode_directory
+    prompt: "Enter name node directory"
+    private: no 
+  
+  tasks:
+  - name: "copying hadoop software"
+    copy:
+        src: "/root/Downloads/hadoop-1.2.1-1.x86_64.rpm"
+        dest: "/root/"
+  - name: "copying java software"
+    copy:
+        src: "/root/Downloads/jdk-8u171-linux-x64.rpm"
+        dest: "/root/"
+  - name: "Install hadoop software"
+    command: "rpm -ivh hadoop-1.2.1-1.x86_64.rpm --force"
+
+  - name: "Install java software"
+    command: "rpm -ivh jdk-8u171-linux-x64.rpm --force"
+
+  - name: "Create directory"
+    file:
+      state: directory
+      path: "{{ namenode_directory }}"
+
+  - name: " configuring hdfs-site.xml"
+    blockinfile:
+      path: "/etc/hadoop/hdfs-site.xml"
+      insertafter: "<configuration>"
+      block: 
+           <property>
+           <name>dfs.name.dir</name>
+           <value>{{ namenode_directory }}</value>
+           </property>
+
+  - name: " configuring core-site.xml"
+    blockinfile:
+      path: "/etc/hadoop/core-site.xml"  
+      insertafter: "<configuration>"
+      block:  
+           <property>
+           <name>fs.default.name</name>
+           <value>hdfs://0.0.0.0:9001</value>
+           </property>
+
+  - name: "formatting the directory"
+    shell: "echo Y | hadoop namenode -format"
+
+  - name: "starting hadoop namenode"
+    shell: "hadoop-daemon.sh start namenode"
+
